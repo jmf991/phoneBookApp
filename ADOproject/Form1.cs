@@ -16,10 +16,12 @@ namespace ADOproject
 {
     public partial class Form1 : Form
     {
-        string datosConexion = "Data Source=net-2;Initial Catalog=listaTelefonos;Integrated Security=true;";//cadena conexion
+        string datosConexion = "Data Source=net-3\\sqlexpress;Initial Catalog=listaTelefonos;Integrated Security=true;";//cadena conexion
         SqlConnection conn = new SqlConnection();//conexion
         SqlDataAdapter dataadapter = new SqlDataAdapter();
         DataSet ds = new DataSet();
+
+        System.Text.StringBuilder InternalId = new System.Text.StringBuilder(); //Muestra valor de InternalId de la fila seleccionada
 
         public Form1()
         {
@@ -35,7 +37,7 @@ namespace ADOproject
                 conn.ConnectionString = datosConexion;
                 conn.Open();//abre conexion
 
-                string sql = "SELECT * FROM telefonosTable4"; //selecciona todos los datos de telefonosTable4
+                string sql = "SELECT * FROM telefonosTableLocal"; //selecciona todos los datos de telefonosTableLocal
                 SqlConnection connection = new SqlConnection(datosConexion);//inicializa los datos de la conexion
                 SqlDataAdapter dataadapter = new SqlDataAdapter(sql, connection);//inicializa el adapter de la conexion
                 DataSet ds = new DataSet();//inicializa el dataset 
@@ -61,7 +63,7 @@ namespace ADOproject
         //INSERTAR ROW EN DB
         private void button_insert_Click(object sender, EventArgs e)
         {   // se especifican los campos y valores a insertar
-            string cmdString = "INSERT INTO telefonosTable4 (fName,lName,phone, IdPhoneBook, InternalId, estaActivo) VALUES (@val1, @val2, @val3, @val4, @val5, @val6)";
+            string cmdString = "INSERT INTO telefonosTableLocal (fName,lName,phone, IdPhoneBook, InternalId, estaActivo) VALUES (@val1, @val2, @val3, @val4, @val5, @val6)";
             using (SqlConnection conn = new SqlConnection(datosConexion))
             {
                 using (SqlCommand comm = new SqlCommand())
@@ -101,7 +103,7 @@ namespace ADOproject
 
                 if (this.datagridView1.Rows[selectedRow].Cells["InternalId"].Value != null) //Si el valor del del InternalId no es null
                 {
-                    System.Text.StringBuilder InternalId = new System.Text.StringBuilder(); //Muestra valor de InternalId de la fila seleccionada
+                   
 
                     InternalId.Append(datagridView1.Rows[selectedRow].Cells["InternalId"].Value.ToString());
                     MessageBox.Show("El InternalId de la fila a borrar es: " + InternalId);
@@ -115,7 +117,7 @@ namespace ADOproject
                     }
 
                     //donde el valor del InternalId coincida con el de la fila seleccionada se cambiará el valor de estaActivo
-                    string cmdString = "UPDATE telefonosTable4 SET estaActivo = @activo WHERE InternalId =" + InternalId;
+                    string cmdString = "UPDATE telefonosTableLocal SET estaActivo = @activo WHERE InternalId =" + InternalId;
 
                     using (SqlConnection conn = new SqlConnection(datosConexion))
                     {
@@ -180,7 +182,7 @@ namespace ADOproject
         }
         // END OCULTADOR DE FILAS GENERAL
 
-        // OCULTADOR DE FILAS
+        // OCULTADOR DE FILAS A BORRAR
         private void littleHider() // Oculta la fila seleccionada con valor 0 en la columna estaActivo 
         {
             int selectedRow = this.datagridView1.SelectedRows[0].Index;
@@ -197,18 +199,33 @@ namespace ADOproject
                 datagridView1.Rows.RemoveAt(this.datagridView1.SelectedRows[0].Index);//Se borra del datagridview
             }
         }
-        // END OCULTADOR DE FILAS
+        // END OCULTADOR DE FILAS A BORRAR
 
         //UPDATE
         private void button_update_Click(object sender, EventArgs e)
         {
+            if (datagridView1.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Debes seleccionar la fila que quieres actualizar");
+                return;
+            }
+            int selectedRow = this.datagridView1.SelectedRows[0].Index; //Para localizar la fila a borrar
+            InternalId.Append(datagridView1.Rows[selectedRow].Cells["InternalId"].Value.ToString());
+
             using (SqlConnection conn = new SqlConnection(datosConexion))
             {
                 using (SqlCommand comm = new SqlCommand())
                 {
                     comm.Connection = conn;
-                    comm.CommandText = "UPDATE telefonosTable4 SET updated = @updated";
-                    comm.Parameters.AddWithValue("@updated", "sí"); //Cambia el valor de update a "Si"
+                    comm.CommandText = "UPDATE telefonosTableLocal SET fName=@val1,lName=@val2,phone=@val3,IdPhoneBook=@val4,InternalId=@val5,estaActivo=@val6,updated=@updated WHERE InternalId =" + InternalId;
+
+                    comm.Parameters.AddWithValue("@val1", textBox_fName.Text);//valor a insertar para fName
+                    comm.Parameters.AddWithValue("@val2", textBox_lName.Text);//valor a insertar para lName
+                    comm.Parameters.AddWithValue("@val3", textBox_phone.Text);//valor a insertar para phone
+                    comm.Parameters.AddWithValue("@val4", textBox_IdPhoneBook.Text);//valor a insertar para IdPhoneBook
+                    comm.Parameters.AddWithValue("@val5", textBox_InternalId.Text);//valor a insertar para InternalId
+                    comm.Parameters.AddWithValue("@val6", 1);//valor a insertar para estaActivo (Por defecto 1, para que se muestre)
+                    comm.Parameters.AddWithValue("@updated", "Si");//valor a insertar para updated (Por defecto: Si)                      
 
                     try
                     {
